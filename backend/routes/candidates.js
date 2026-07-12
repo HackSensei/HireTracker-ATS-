@@ -5,7 +5,7 @@ const Activity = require('../models/Activity');
 const { auth, authorize } = require('../middleware/auth');
 const Job = require('../models/Job');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const { parseResume } = require('../utils/resumeParser');
 
 const upload = multer({
@@ -113,7 +113,9 @@ router.post('/parse', auth, authorize('admin', 'recruiter'), upload.single('resu
       return res.status(400).json({ message: 'No resume file uploaded' });
     }
     
-    const pdfData = await pdfParse(req.file.buffer);
+    const pdfUint8 = new Uint8Array(req.file.buffer);
+    const parser = new PDFParse(pdfUint8);
+    const pdfData = await parser.getText();
     const parsedCandidate = await parseResume(pdfData.text);
     
     res.json(parsedCandidate);

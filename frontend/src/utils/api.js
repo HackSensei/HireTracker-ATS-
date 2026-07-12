@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -46,6 +46,14 @@ export const candidatesAPI = {
 
 export const analyticsAPI = {
   getDashboard: () => api.get('/analytics/dashboard'),
+};
+
+export const publicAPI = {
+  getJobs: () => api.get('/public/jobs'),
+  getJobDetails: (id) => api.get(`/public/jobs/${id}`),
+  apply: (jobId, formData) => api.post(`/public/jobs/${jobId}/apply`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export default api;

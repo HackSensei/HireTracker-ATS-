@@ -152,6 +152,11 @@ npm start
 ### Analytics
 - `GET /api/analytics/dashboard` - Get dashboard analytics (funnel conversion, time-to-hire, top skills)
 
+### Public (Unauthenticated)
+- `GET /api/public/jobs` - Get list of open job postings
+- `GET /api/public/jobs/:id` - Get detail specifications of a single open job
+- `POST /api/public/jobs/:jobId/apply` - Apply to a job posting (handles PDF resume upload and auto-parsing)
+
 ## Candidate Status Flow
 
 The hiring pipeline follows these stages:
@@ -170,7 +175,7 @@ The hiring pipeline follows these stages:
 HireTracker (ATS)/
 ├── backend/
 │   ├── models/          # Mongoose models (User, Job, Candidate, Activity)
-│   ├── routes/          # API routes (auth, jobs, candidates, analytics)
+│   ├── routes/          # API routes (auth, jobs, candidates, analytics, public)
 │   ├── utils/           # Utilities (resumeParser parser engine)
 │   ├── middleware/      # Authentication middleware
 │   ├── server.js        # Express server setup
@@ -179,7 +184,7 @@ HireTracker (ATS)/
 │   ├── src/
 │   │   ├── components/  # Reusable UI (Layout, CandidateDetailsModal)
 │   │   ├── context/     # React state context (AuthContext)
-│   │   ├── pages/       # Page components (Dashboard, Jobs, Candidates, Pipeline Kanban, Login, Register)
+│   │   ├── pages/       # Page components (Dashboard, Jobs, Candidates, Pipeline Kanban, Careers Job Board, Login, Register)
 │   │   ├── utils/       # API helper endpoints
 │   │   ├── App.jsx      # Main app component with routing
 │   │   └── index.js     # Entry point

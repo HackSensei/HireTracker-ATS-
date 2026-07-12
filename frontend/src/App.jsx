@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Jobs from './pages/Jobs';
 import Candidates from './pages/Candidates';
 import Pipeline from './pages/Pipeline';
+import Careers from './pages/Careers';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -90,6 +91,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/careers" element={<Careers />} />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
