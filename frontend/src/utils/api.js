@@ -1,0 +1,51 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const authAPI = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  getMe: () => api.get('/auth/me'),
+};
+
+export const jobsAPI = {
+  getAll: () => api.get('/jobs'),
+  getById: (id) => api.get(`/jobs/${id}`),
+  create: (data) => api.post('/jobs', data),
+  update: (id, data) => api.put(`/jobs/${id}`, data),
+  delete: (id) => api.delete(`/jobs/${id}`),
+};
+
+export const candidatesAPI = {
+  getAll: (params) => api.get('/candidates', { params }),
+  getById: (id) => api.get(`/candidates/${id}`),
+  create: (data) => api.post('/candidates', data),
+  update: (id, data) => api.put(`/candidates/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/candidates/${id}/status`, { status }),
+  delete: (id) => api.delete(`/candidates/${id}`),
+  parseResume: (formData) => api.post('/candidates/parse', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getTimeline: (id) => api.get(`/candidates/${id}/timeline`),
+  addComment: (id, text) => api.post(`/candidates/${id}/comments`, { text }),
+  deleteComment: (id, commentId) => api.delete(`/candidates/${id}/comments/${commentId}`),
+};
+
+export const analyticsAPI = {
+  getDashboard: () => api.get('/analytics/dashboard'),
+};
+
+export default api;
