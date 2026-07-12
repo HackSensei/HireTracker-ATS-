@@ -15,8 +15,12 @@ const Register = () => {
     e.preventDefault();
     setError('');
     try {
-      await register(name, email, password, role);
-      navigate('/dashboard');
+      const registeredUser = await register(name, email, password, role);
+      if (registeredUser && registeredUser.role === 'candidate') {
+        navigate('/portal');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError('Failed to create account');
     }
@@ -84,9 +88,8 @@ const Register = () => {
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
             >
+              <option value="candidate">Candidate (Job Seeker)</option>
               <option value="recruiter">Recruiter</option>
-              <option value="admin">Admin</option>
-              <option value="viewer">Viewer</option>
             </select>
           </div>
           <button

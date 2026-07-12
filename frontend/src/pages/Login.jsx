@@ -13,8 +13,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const loggedUser = await login(email, password);
+      if (loggedUser && loggedUser.role === 'candidate') {
+        navigate('/portal');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError('Invalid email or password');
     }
@@ -72,11 +76,6 @@ const Login = () => {
             Sign up
           </Link>
         </p>
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-          <Link to="/careers" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-1">
-            Looking for jobs? View Careers Page →
-          </Link>
-        </div>
       </div>
     </div>
   );

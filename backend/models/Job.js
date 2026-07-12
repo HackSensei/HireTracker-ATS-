@@ -42,6 +42,14 @@ const jobSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  collaborators: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  accessRequests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -61,18 +61,6 @@ const Layout = ({ children }) => {
               );
             })}
           </nav>
-          <div className="mt-8 p-4 bg-indigo-50/70 rounded-xl border border-indigo-100/50">
-            <p className="text-xs font-bold text-indigo-900 mb-1">Public Careers Board</p>
-            <p className="text-[10px] text-slate-500 leading-normal mb-3">Share this link to collect candidate applications directly.</p>
-            <a
-              href="/careers"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full text-center block text-xs bg-indigo-600 hover:bg-indigo-700 text-white py-1.5 rounded-lg font-semibold transition-colors"
-            >
-              Open Careers Page
-            </a>
-          </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t">
           <div className="mb-4">

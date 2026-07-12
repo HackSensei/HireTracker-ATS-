@@ -23,10 +23,15 @@ export const authAPI = {
 
 export const jobsAPI = {
   getAll: () => api.get('/jobs'),
+  getDiscoverJobs: () => api.get('/jobs?discover=true'),
   getById: (id) => api.get(`/jobs/${id}`),
   create: (data) => api.post('/jobs', data),
   update: (id, data) => api.put(`/jobs/${id}`, data),
   delete: (id) => api.delete(`/jobs/${id}`),
+  requestAccess: (id) => api.post(`/jobs/${id}/request-access`),
+  approveAccess: (id, targetUserId) => api.post(`/jobs/${id}/approve-access`, { targetUserId }),
+  declineAccess: (id, targetUserId) => api.post(`/jobs/${id}/decline-access`, { targetUserId }),
+  removeCollaborator: (id, targetUserId) => api.post(`/jobs/${id}/remove-collaborator`, { targetUserId }),
 };
 
 export const candidatesAPI = {
@@ -42,6 +47,10 @@ export const candidatesAPI = {
   getTimeline: (id) => api.get(`/candidates/${id}/timeline`),
   addComment: (id, text) => api.post(`/candidates/${id}/comments`, { text }),
   deleteComment: (id, commentId) => api.delete(`/candidates/${id}/comments/${commentId}`),
+  getPortalApplications: () => api.get('/candidates/portal/applications'),
+  portalApply: (jobId, formData) => api.post(`/candidates/portal/apply/${jobId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const analyticsAPI = {

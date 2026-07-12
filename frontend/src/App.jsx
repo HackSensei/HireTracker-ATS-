@@ -8,9 +8,10 @@ import Dashboard from './pages/Dashboard';
 import Jobs from './pages/Jobs';
 import Candidates from './pages/Candidates';
 import Pipeline from './pages/Pipeline';
-import Careers from './pages/Careers';
+import CandidatePortal from './pages/CandidatePortal';
+import JobDetails from './pages/JobDetails';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles, wrapLayout = true }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
@@ -20,8 +21,19 @@ const ProtectedRoute = ({ children }) => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  // Restrict access by role
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (user.role === 'candidate') {
+      return <Navigate to="/portal" />;
+    }
+    return <Navigate to="/dashboard" />;
+  }
   
-  return <Layout>{children}</Layout>;
+  if (wrapLayout) {
+    return <Layout>{children}</Layout>;
+  }
+  return <>{children}</>;
 };
 
 const PublicRoute = ({ children }) => {
@@ -32,6 +44,9 @@ const PublicRoute = ({ children }) => {
   }
   
   if (user) {
+    if (user.role === 'candidate') {
+      return <Navigate to="/portal" />;
+    }
     return <Navigate to="/dashboard" />;
   }
   
@@ -62,7 +77,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'recruiter', 'viewer']}>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -70,7 +85,7 @@ function App() {
           <Route
             path="/jobs"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'recruiter', 'viewer']}>
                 <Jobs />
               </ProtectedRoute>
             }
@@ -78,7 +93,7 @@ function App() {
           <Route
             path="/candidates"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'recruiter', 'viewer']}>
                 <Candidates />
               </ProtectedRoute>
             }
@@ -86,12 +101,27 @@ function App() {
           <Route
             path="/pipeline"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['admin', 'recruiter', 'viewer']}>
                 <Pipeline />
               </ProtectedRoute>
             }
           />
-          <Route path="/careers" element={<Careers />} />
+          <Route
+            path="/portal"
+            element={
+              <ProtectedRoute allowedRoles={['candidate']} wrapLayout={false}>
+                <CandidatePortal />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/portal/jobs/:id"
+            element={
+              <ProtectedRoute allowedRoles={['candidate']} wrapLayout={false}>
+                <JobDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

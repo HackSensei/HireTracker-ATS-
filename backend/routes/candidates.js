@@ -69,8 +69,29 @@ router.get('/', auth, async (req, res) => {
     const { status, jobId, search } = req.query;
     let query = {};
 
+    // Ownership/Collaborator Auth check for recruiters (admin/candidate bypass)
+    if (req.user.role !== 'admin' && req.user.role !== 'candidate') {
+      const accessibleJobs = await Job.find({
+        $or: [
+          { createdBy: req.user._id },
+          { collaborators: req.user._id }
+        ]
+      }).select('_id');
+      const jobIds = accessibleJobs.map(j => j._id);
+      
+      if (jobId) {
+        if (!jobIds.some(id => id.toString() === jobId.toString())) {
+          return res.json([]);
+        }
+        query.jobId = jobId;
+      } else {
+        query.jobId = { $in: jobIds };
+      }
+    } else if (jobId) {
+      query.jobId = jobId;
+    }
+
     if (status) query.status = status;
-    if (jobId) query.jobId = jobId;
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -85,6 +106,81 @@ router.get('/', auth, async (req, res) => {
       .sort({ appliedDate: -1 });
     
     res.json(candidates);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get logged-in candidate's applications
+router.get('/portal/applications', auth, authorize('candidate'), async (req, res) => {
+  try {
+    const applications = await Candidate.find({ userId: req.user._id })
+      .populate('jobId', 'title department location type status')
+      .sort({ appliedDate: -1 });
+    res.json(applications);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Candidate applies to a job from Candidate Portal (reusing resume or uploading new)
+router.post('/portal/apply/:jobId', auth, authorize('candidate'), upload.single('resume'), async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const jobExists = await Job.findOne({ _id: jobId, status: 'open' });
+    if (!jobExists) {
+      return res.status(404).json({ message: 'Job posting is not open or not found' });
+    }
+
+    const alreadyApplied = await Candidate.findOne({ userId: req.user._id, jobId });
+    if (alreadyApplied) {
+      return res.status(400).json({ message: 'You have already applied to this job role!' });
+    }
+
+    let parsed = {};
+    if (req.file) {
+      const pdfUint8 = new Uint8Array(req.file.buffer);
+      const parser = new PDFParse(pdfUint8);
+      const pdfData = await parser.getText();
+      parsed = await parseResume(pdfData.text);
+    } else {
+      const previousApp = await Candidate.findOne({ userId: req.user._id }).sort({ appliedDate: -1 });
+      if (!previousApp) {
+        return res.status(400).json({ message: 'Please upload a PDF resume for your first application.' });
+      }
+      parsed = {
+        skills: previousApp.skills,
+        experience: previousApp.experience,
+        education: previousApp.education
+      };
+    }
+
+    const matchScores = await calculateScore(parsed.skills, parsed.experience, parsed.education, jobId);
+
+    const candidate = new Candidate({
+      name: req.user.name,
+      email: req.user.email,
+      phone: req.body.phone || parsed.phone || '',
+      skills: parsed.skills,
+      experience: parsed.experience,
+      education: parsed.education,
+      jobId,
+      status: 'applied',
+      matchScores,
+      userId: req.user._id,
+      notes: 'Applied via Candidate Portal.'
+    });
+    await candidate.save();
+
+    const activity = new Activity({
+      candidateId: candidate._id,
+      action: 'candidate_created',
+      details: 'Applied via Candidate Portal Dashboard',
+      performedBy: req.user._id
+    });
+    await activity.save();
+
+    res.status(201).json(candidate);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

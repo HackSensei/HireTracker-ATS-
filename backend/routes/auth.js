@@ -9,6 +9,10 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    if (role === 'admin' || role === 'viewer') {
+      return res.status(400).json({ message: 'Registration for Admin or Viewer roles is restricted.' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });

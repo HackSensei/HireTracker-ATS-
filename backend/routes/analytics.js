@@ -2,16 +2,31 @@ const express = require('express');
 const router = express.Router();
 const Job = require('../models/Job');
 const Candidate = require('../models/Candidate');
-const { auth } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
 
 // Get dashboard analytics
-router.get('/dashboard', auth, async (req, res) => {
+router.get('/dashboard', auth, authorize('admin', 'recruiter', 'viewer'), async (req, res) => {
   try {
-    const totalJobs = await Job.countDocuments();
-    const openJobs = await Job.countDocuments({ status: 'open' });
-    const totalCandidates = await Candidate.countDocuments();
+    // Determine accessible jobs
+    let jobsQuery = {};
+    if (req.user.role !== 'admin') {
+      jobsQuery = {
+        $or: [
+          { createdBy: req.user._id },
+          { collaborators: req.user._id }
+        ]
+      };
+    }
+    
+    const accessibleJobs = await Job.find(jobsQuery);
+    const jobIds = accessibleJobs.map(j => j._id);
+
+    const totalJobs = accessibleJobs.length;
+    const openJobs = accessibleJobs.filter(j => j.status === 'open').length;
+    const totalCandidates = await Candidate.countDocuments({ jobId: { $in: jobIds } });
     
     const candidatesByStatus = await Candidate.aggregate([
+      { $match: { jobId: { $in: jobIds } } },
       {
         $group: {
           _id: '$status',
@@ -21,6 +36,7 @@ router.get('/dashboard', auth, async (req, res) => {
     ]);
 
     const candidatesByJob = await Candidate.aggregate([
+      { $match: { jobId: { $in: jobIds } } },
       {
         $lookup: {
           from: 'jobs',
@@ -37,13 +53,13 @@ router.get('/dashboard', auth, async (req, res) => {
       }
     ]);
 
-    const recentCandidates = await Candidate.find()
+    const recentCandidates = await Candidate.find({ jobId: { $in: jobIds } })
       .populate('jobId', 'title')
       .sort({ appliedDate: -1 })
       .limit(5);
 
     // Calculate Average Time-to-Hire (in days) for Hired candidates
-    const hiredCandidates = await Candidate.find({ status: 'hired' });
+    const hiredCandidates = await Candidate.find({ jobId: { $in: jobIds }, status: 'hired' });
     let totalMs = 0;
     let hiredCount = hiredCandidates.length;
     hiredCandidates.forEach(c => {
@@ -53,9 +69,8 @@ router.get('/dashboard', auth, async (req, res) => {
     const avgTimeToHireDays = hiredCount > 0 ? (totalMs / hiredCount / (1000 * 60 * 60 * 24)).toFixed(1) : 0;
 
     // Calculate Top Required Skills from Job postings
-    const jobs = await Job.find();
     const skillsCount = {};
-    jobs.forEach(job => {
+    accessibleJobs.forEach(job => {
       if (job.skillsRequired) {
         job.skillsRequired.forEach(skill => {
           const normalized = skill.trim();
