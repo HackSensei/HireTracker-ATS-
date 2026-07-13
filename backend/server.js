@@ -1,3 +1,8 @@
+// Polyfill canvas objects for pdf-parse under serverless environments
+global.DOMMatrix = global.DOMMatrix || class DOMMatrix {};
+global.ImageData = global.ImageData || class ImageData {};
+global.Path2D = global.Path2D || class Path2D {};
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
